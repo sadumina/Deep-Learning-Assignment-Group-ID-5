@@ -1,202 +1,89 @@
-# Diabetic Retinopathy Screening — Automated Detection of Retinal Damage from Eye Scans
-
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)](https://www.tensorflow.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)]()
-
-> **SE4050 — Deep Learning | BSc (Hons) in Information Technology**
-> Sri Lanka Institute of Information Technology (SLIIT) | 2026
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Problem Statement](#problem-statement)
-- [Dataset](#dataset)
-- [Models](#models)
-- [Methodology](#methodology)
-- [Evaluation Metrics](#evaluation-metrics)
-- [Results](#results)
-- [Getting Started](#getting-started)
-- [Reproducibility](#reproducibility)
-- [Team & Contributions](#team--contributions)
-- [References](#references)
-- [License](#license)
-
----
+# Custom CNN — Diabetic Retinopathy Screening (Baseline Model)
 
 ## Overview
 
-Diabetic Retinopathy (DR) is a progressive complication of diabetes that damages the blood vessels of the retina and remains one of the leading causes of preventable blindness worldwide. Early detection through regular retinal screening is critical, but manual grading by ophthalmologists is time-intensive and depends on specialist availability that is limited in many regions.
+This branch implements a **Custom Convolutional Neural Network (CNN)** trained from scratch as the baseline model for our SE4050 Deep Learning group project: **Diabetic Retinopathy Screening — Automated Detection of Retinal Damage from Eye Scans**.
 
-This project implements and critically compares **four distinct deep learning architectures** for automated, multi-class classification of Diabetic Retinopathy severity from retinal fundus images, with the goal of evaluating which approach best balances predictive accuracy, generalization, and computational efficiency for real-world screening use cases.
+This model does **not** use any pretrained/transfer-learning weights. It exists specifically to answer: *how much does transfer learning actually help on a small, specialized medical imaging dataset?* — the other three models in this project (DenseNet121, EfficientNetB0, ResNet50) use ImageNet pretrained weights, so this CNN is the point of comparison.
 
-This repository was developed as the practical submission for the **SE4050 – Deep Learning** module assignment (SLIIT, 2026), under the **Supervised Deep Learning** project category.
+## What is a CNN?
 
----
+A Convolutional Neural Network (CNN) is a deep learning architecture designed primarily for processing grid-like data such as images. Instead of treating an image as a flat vector of pixels, CNNs use **convolution layers** that slide small filters (kernels) across the image to detect local patterns — edges, textures, shapes — and build up to more complex, high-level features (like blood vessel damage or hemorrhages, in our case) as the network gets deeper.
 
-## Problem Statement
+Key building blocks:
+- **Convolutional layers (Conv2D):** learn spatial filters that detect features like edges, curves, and textures directly from raw pixels.
+- **Pooling layers (MaxPooling):** downsample feature maps, reducing spatial dimensions while retaining the strongest activations — this keeps the model computationally efficient and adds some translation invariance.
+- **Dense (fully connected) layers:** placed at the end of the network to combine the extracted features and produce the final classification.
+- **Activation functions (ReLU, Softmax):** introduce non-linearity so the network can learn complex patterns, with Softmax used at the output layer for multi-class probability distribution.
 
-Given a retinal fundus image, classify the severity of Diabetic Retinopathy into one of five clinically defined stages:
+CNNs are the backbone architecture behind most modern computer vision tasks, including:
+- **Object detection** — locating and classifying multiple objects in an image
+- **Face verification** — comparing facial features to confirm identity
+- **Image classification / medical image processing** — exactly what we're doing here: classifying retinal fundus images into DR severity stages
 
-| Class | Label | Description |
-|:-----:|-------|-------------|
-| 0 | No DR | No visible signs of retinopathy |
-| 1 | Mild NPDR | Microaneurysms present |
-| 2 | Moderate NPDR | More extensive vascular damage |
-| 3 | Severe NPDR | Widespread blood vessel blockage |
-| 4 | Proliferative DR | Abnormal new vessel growth; highest risk of blindness |
+## Architecture (this implementation)
 
-This is framed as a **multi-class image classification problem**, with additional attention to the ordinal nature of the severity scale during evaluation.
+A handful of `Conv2D + MaxPooling` blocks feeding into dense layers — no pretrained backbone.
 
----
+```
+Input (Retinal Fundus Image)
+    → Conv2D + ReLU → MaxPooling2D
+    → Conv2D + ReLU → MaxPooling2D
+    → Conv2D + ReLU → MaxPooling2D
+    → Flatten
+    → Dense + ReLU → Dropout
+    → Dense (Softmax, 5 classes)
+```
+
+*(Update this diagram to match your final layer counts/filter sizes once finalized.)*
 
 ## Dataset
 
-- **Source:** [APTOS 2019 Blindness Detection](https://www.kaggle.com/competitions/aptos2019-blindness-detection/data) — Kaggle, hosted by the Asia Pacific Tele-Ophthalmology Society (APTOS)
-- **Size:** ~3,660 labeled retinal fundus images (training set)
-- **Format:** RGB `.png` images of varying resolution, accompanied by a CSV of per-image severity labels (0–4)
-- **License / Access:** Publicly available under Kaggle competition terms; see the dataset page for full licensing details
+- **Source:** [APTOS 2019 Blindness Detection](https://www.kaggle.com/c/aptos2019-blindness-detection) (Kaggle)
+- **Classes (5):** No DR, Mild, Moderate, Severe, Proliferative DR
+- **Size:** ~3,662 labeled retinal fundus images
+- Split into train/validation/test using stratified sampling to preserve class balance (dataset is imbalanced — "No DR" dominates).
 
-> Dataset files are **not included** in this repository due to size and licensing. See [Getting Started](#getting-started) for download instructions.
+## Why this model matters in the project
 
----
+| Model | Pretrained? | Role |
+|---|---|---|
+| **Custom CNN (this branch)** | No | Baseline — from-scratch performance |
+| DenseNet121 | Yes (ImageNet) | Dense connectivity, strong feature reuse |
+| EfficientNetB0 | Yes (ImageNet) | Compound scaling, efficiency comparison |
+| ResNet50 | Yes (ImageNet) | Residual connections, depth comparison |
 
-## Models
+This CNN's results are what we compare the transfer-learning models against to demonstrate the accuracy/generalization gains transfer learning provides.
 
-Four architecturally distinct deep learning models are implemented and evaluated under identical experimental conditions:
+## Files in this branch
 
-| # | Model | Type | Key Idea |
-|---|-------|------|----------|
-| 1 | **Custom CNN** | Trained from scratch | Baseline convolutional network with no pretrained weights; establishes how much transfer learning improves over a naive approach |
-| 2 | **DenseNet121** | Transfer learning (ImageNet) | Dense connectivity between layers improves feature reuse and gradient flow |
-| 3 | **EfficientNetB0** | Transfer learning (ImageNet) | Compound scaling of depth/width/resolution for strong accuracy-to-parameter efficiency |
-| 4 | **ResNet50** | Transfer learning (ImageNet) | Residual connections enable stable training of deeper networks |
+```
+├── custom_cnn.ipynb / .py     # Model definition, training loop
+├── data_preprocessing.py      # Image loading, resizing, augmentation, stratified split
+├── evaluation.py               # Accuracy, confusion matrix, classification report
+└── README.md                   # This file
+```
 
-Each model is documented in its own notebook with architecture justification, hyperparameter configuration, and training curves.
+## Training Setup
 
----
-
-## Methodology
-
-1. **Exploratory Data Analysis** - class distribution, image dimensions, sample visualization per class
-2. **Preprocessing** - black-border cropping, resizing, contrast enhancement (CLAHE / Gaussian blend), normalization
-3. **Data Splitting** - stratified train / validation / test split; test set held out and used **only** for final evaluation
-4. **Class Imbalance Handling** - class weighting to address the natural skew toward "No DR" cases
-5. **Model Training** - all four models trained under matched conditions (same splits, batch size philosophy, and augmentation strategy) for fair comparison
-6. **Explainability** - Grad-CAM visualizations to interpret which retinal regions drive each model's predictions
-7. **Comparative Evaluation** - performance, efficiency, and generalization compared across all four models
-
----
-
-## Evaluation Metrics
-
-- **Quadratic Weighted Kappa** — primary metric, accounts for the ordinal severity scale
-- **Accuracy, Precision, Recall, F1-score** (per-class and macro-averaged)
-- **ROC-AUC** (one-vs-rest)
-- **Confusion Matrix**
-- **Training time & parameter count** — for computational efficiency comparison
-
----
+- **Input size:** _(e.g. 224x224 — update once fixed)_
+- **Optimizer:** _(e.g. Adam)_
+- **Loss function:** Categorical Crossentropy
+- **Epochs:** _(update)_
+- **Batch size:** _(update)_
+- **Augmentation:** _(rotation, flips, zoom — update)_
 
 ## Results
 
-| Model | Val. Kappa | Test Kappa | Accuracy | Params | Training Time |
-|-------|:----------:|:----------:|:--------:|:------:|:--------------:|
-| Custom CNN | — | — | — | — | — |
-| DenseNet121 | — | — | — | — | — |
-| EfficientNetB0 | — | — | — | — | — |
-| ResNet50 | — | — | — | — | — |
-
-*Full results, confusion matrices, and Grad-CAM visualizations are available in `reports/figures/` and discussed in detail in `reports/Report.pdf`.*
-
----
-
-## Getting Started
-
-### Prerequisites
-- Python 3.10+
-- pip or conda
-
-### Installation
-
-```bash
-git clone https://github.com/<your-org>/diabetic-retinopathy-screening.git
-cd diabetic-retinopathy-screening
-pip install -r requirements.txt
-```
-
-or with conda:
-
-```bash
-conda env create -f environment.yml
-conda activate dr-screening
-```
-
-### Dataset Setup
-
-1. Download the dataset from [Kaggle](https://www.kaggle.com/competitions/aptos2019-blindness-detection/data) (requires a Kaggle account and competition acceptance)
-2. Place the extracted files under `data/raw/`
-3. Run the preprocessing notebook:
-
-```bash
-jupyter notebook notebooks/02_preprocessing.ipynb
-```
-
-### Training a Model
-
-```bash
-python src/train.py --model densenet121 --config configs/config.yaml
-```
-
-### Evaluating a Model
-
-```bash
-python src/evaluate.py --model densenet121 --weights saved_models/densenet121_best.h5
-```
-
----
-
-## Reproducibility
-
-- Random seed fixed at `42` across NumPy, TensorFlow, and data splitting
-- Exact hyperparameters and training configuration for each model are stored in `configs/config.yaml`
-- Model checkpoints saved on best validation kappa score (see `saved_models/`)
-- Dependency versions pinned in `requirements.txt` / `environment.yml`
-
----
-
-## Team & Contributions
-
-| Name | Student ID | Role / Focus Area |
-|------|-----------|--------------------|
-| Bagya R M S *(Leader)* | IT23394124 | Custom CNN + Preprocessing pipeline |
-| Insath MMM | IT23183872 | DenseNet121 |
-| Gayathree M.G.K | IT23334106 | EfficientNetB0 |
-| Purijjala R W M A H | IT23431676 | ResNet50 + Evaluation/Grad-CAM |
-
-See `Members.txt` for full contact details and [commit history](../../commits/main) for individual contributions.
-
----
+_(Add accuracy, precision/recall/F1 per class, confusion matrix, and training curves here once training is complete.)_
 
 ## References
 
-1. APTOS 2019 Blindness Detection Dataset. Kaggle / Asia Pacific Tele-Ophthalmology Society. https://www.kaggle.com/competitions/aptos2019-blindness-detection
-2. Huang, G., Liu, Z., van der Maaten, L., & Weinberger, K. Q. (2017). *Densely Connected Convolutional Networks*. https://arxiv.org/abs/1608.06993
-3. Tan, M., & Le, Q. V. (2019). *EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks*. https://arxiv.org/abs/1905.11946
-4. He, K., Zhang, X., Ren, S., & Sun, J. (2015). *Deep Residual Learning for Image Recognition*. https://arxiv.org/abs/1512.03385
-5. Selvaraju, R. R., et al. (2017). *Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization*. https://arxiv.org/abs/1610.02391
+- CS231n Convolutional Neural Networks notes (conceptual foundation for conv/pooling layers)
+- [Keras Conv2D documentation](https://keras.io/api/layers/convolution_layers/convolution2d/)
+- APTOS 2019 Blindness Detection dataset — Kaggle
 
----
+## Author
 
-## License
-
-This project is submitted as academic coursework for SE4050 – Deep Learning at SLIIT. Code is released under the [MIT License](LICENSE) unless otherwise noted. The dataset is subject to its original Kaggle/APTOS licensing terms and is not redistributed in this repository.
-
----
-
-<p align="center">
-  Built for SE4050 — Deep Learning, SLIIT (2026)
-</p>
+Bagya R M S (IT23394124) — Group Leader
+SE4050 Deep Learning Group Project — SLIIT
