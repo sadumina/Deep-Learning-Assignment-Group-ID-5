@@ -1,0 +1,17 @@
+# APTOS dataset - do not upload to GitHub
+data/aptos2019-blindness-detection/
+
+# Trained model files
+*.keras
+*.h5
+
+# Python virtual environments
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter temporary files
+.ipynb_checkpoints/
