@@ -1,4 +1,4 @@
-# Custom CNN — Diabetic Retinopathy Screening (Baseline Model)
+# Custom CNN - Diabetic Retinopathy Screening (Baseline Model)
 
 ## Overview
 
