@@ -1,0 +1,5 @@
+experiment,best_epoch,validation_loss,validation_accuracy,selected_as_final
+Original ResNet50 Stage 1,8,0.6505,0.7668,True
+Original ResNet50 Stage 2,4,0.6658,0.7577,False
+ResNet50 V2 Stage 1,4,0.8586,0.7213,False
+ResNet50 V2 Stage 2,1,0.7787,0.7505,False
