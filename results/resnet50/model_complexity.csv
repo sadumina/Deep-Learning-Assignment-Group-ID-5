@@ -1,0 +1,2 @@
+model,selected_training_stage,total_parameters,trainable_parameters,non_trainable_parameters,model_file_size_mb,best_epoch,training_time_minutes,test_evaluation_time_seconds,average_inference_time_ms_per_image
+ResNet50,Stage 1 transfer learning,23597957,10245,23587712,90.75,8,15.16,27.2,49.45
