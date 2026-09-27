@@ -1,0 +1,18 @@
+true_class,predicted_class,error_count
+Mild,Moderate,19
+Moderate,Proliferative DR,15
+Moderate,Severe,14
+Severe,Proliferative DR,13
+Moderate,Mild,12
+Proliferative DR,Moderate,12
+Moderate,No DR,10
+Mild,No DR,7
+No DR,Mild,6
+Proliferative DR,Severe,6
+Severe,Moderate,6
+Mild,Proliferative DR,4
+Proliferative DR,Mild,2
+Mild,Severe,1
+No DR,Moderate,1
+Proliferative DR,No DR,1
+Severe,No DR,1
