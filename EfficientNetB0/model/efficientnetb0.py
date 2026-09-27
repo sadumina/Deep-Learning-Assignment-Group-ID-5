@@ -3,21 +3,12 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.applications import EfficientNetB0
 
 
-# ==============================
-# Model Configuration
-# ==============================
-
-IMG_SIZE = (224, 224)
+IMG_SIZE = (224,224)
 NUM_CLASSES = 5
 
 
-# ==============================
-# Create EfficientNetB0 Model
-# ==============================
-
 def create_efficientnetb0():
 
-    # Load pretrained EfficientNetB0
     base_model = EfficientNetB0(
         weights="imagenet",
         include_top=False,
@@ -25,38 +16,31 @@ def create_efficientnetb0():
     )
 
 
-    # Freeze pretrained layers
+    # Freeze all layers first
     base_model.trainable = False
 
 
-    # Create classification model
+    # Fine tune last 20 layers
+    for layer in base_model.layers[-20:]:
+        layer.trainable = True
+
 
     model = models.Sequential(
         [
+
             base_model,
 
             layers.GlobalAveragePooling2D(),
 
-            layers.Dropout(0.3),
+            layers.Dropout(0.4),
 
             layers.Dense(
                 NUM_CLASSES,
                 activation="softmax"
             )
+
         ]
     )
 
 
     return model
-
-
-
-# ==============================
-# Model Summary Test
-# ==============================
-
-if __name__ == "__main__":
-
-    model = create_efficientnetb0()
-
-    model.summary()
