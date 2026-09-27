@@ -108,7 +108,7 @@ Each model is documented in its own notebook with architecture justification, hy
 | Custom CNN | — | — | — | — | — |
 | DenseNet121 | — | — | — | — | — |
 | EfficientNetB0 | — | — | — | — | — |
-| ResNet50 | — | — | — | — | — |
+| ResNet50 | 0.8237 | 0.8368 | 76.36% | 23.60M | 15.16 min |
 
 *Full results, confusion matrices, and Grad-CAM visualizations are available in `reports/figures/` and discussed in detail in `reports/Report.pdf`.*
 
