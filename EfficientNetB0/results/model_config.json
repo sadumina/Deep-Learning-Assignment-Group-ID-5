@@ -1,0 +1,16 @@
+{
+    "model_path": "D:\\DL Assignement\\Deep-Learning-Assignment-Group-ID-5\\EfficientNetB0\\results\\best_efficientnetb0.keras",
+    "input_size": [
+        224,
+        224
+    ],
+    "num_classes": 5,
+    "class_names": [
+        "No DR",
+        "Mild",
+        "Moderate",
+        "Severe",
+        "Proliferative DR"
+    ],
+    "gradcam_layer": "top_conv"
+}
