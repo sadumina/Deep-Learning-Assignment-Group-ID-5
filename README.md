@@ -1,4 +1,4 @@
-# Diabetic Retinopathy Screening — Automated Detection of Retinal Damage from Eye Scans
+# Diabetic Retinopathy Screening — Automated Detection of Retinal Damage from Eye Scans(Review our Final Notebooks in Finalize-Models Branch)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)](https://www.tensorflow.org/)
