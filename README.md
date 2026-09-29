@@ -1,202 +1,68 @@
-# Diabetic Retinopathy Screening — Automated Detection of Retinal Damage from Eye Scans
+# ResNet50 — Diabetic Retinopathy Classification
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)](https://www.tensorflow.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)]()
-
-> **SE4050 — Deep Learning | BSc (Hons) in Information Technology**
-> Sri Lanka Institute of Information Technology (SLIIT) | 2026
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Problem Statement](#problem-statement)
-- [Dataset](#dataset)
-- [Models](#models)
-- [Methodology](#methodology)
-- [Evaluation Metrics](#evaluation-metrics)
-- [Results](#results)
-- [Getting Started](#getting-started)
-- [Reproducibility](#reproducibility)
-- [Team & Contributions](#team--contributions)
-- [References](#references)
-- [License](#license)
+Part of the **SE4050 Deep Learning** group project (SLIIT, Group G05).
+**Author:** Purijjala R W M A H (IT23431676)
+**Notebook:** `resnet50_train.ipynb`
 
 ---
 
 ## Overview
 
-Diabetic Retinopathy (DR) is a progressive complication of diabetes that damages the blood vessels of the retina and remains one of the leading causes of preventable blindness worldwide. Early detection through regular retinal screening is critical, but manual grading by ophthalmologists is time-intensive and depends on specialist availability that is limited in many regions.
+This notebook classifies retinal fundus images into five Diabetic Retinopathy (DR) severity levels (No DR, Mild, Moderate, Severe, Proliferative DR) using **transfer learning with ResNet50**.
 
-This project implements and critically compares **four distinct deep learning architectures** for automated, multi-class classification of Diabetic Retinopathy severity from retinal fundus images, with the goal of evaluating which approach best balances predictive accuracy, generalization, and computational efficiency for real-world screening use cases.
+ResNet50 uses residual (skip) connections, which allow deep networks to train stably.
 
-This repository was developed as the practical submission for the **SE4050 – Deep Learning** module assignment (SLIIT, 2026), under the **Supervised Deep Learning** project category.
+## Setup
 
----
+| Item | Value |
+|------|-------|
+| Dataset | APTOS 2019 Blindness Detection |
+| Input size | 224 × 224 RGB |
+| Split | 70 / 15 / 15 stratified (train / validation / test, 550 test images) |
+| Backbone | ResNet50, ImageNet weights, original classifier removed |
+| Head | Pooling → Dropout → 5-class Softmax |
+| Augmentation | Horizontal flip, rotation, zoom, contrast |
+| Imbalance handling | Balanced class weights from training labels |
+| Callbacks | EarlyStopping, ModelCheckpoint, ReduceLROnPlateau |
 
-## Problem Statement
+The train, validation and test splits are saved as CSV files so the experiment can be reproduced.
 
-Given a retinal fundus image, classify the severity of Diabetic Retinopathy into one of five clinically defined stages:
+## Training
 
-| Class | Label | Description |
-|:-----:|-------|-------------|
-| 0 | No DR | No visible signs of retinopathy |
-| 1 | Mild NPDR | Microaneurysms present |
-| 2 | Moderate NPDR | More extensive vascular damage |
-| 3 | Severe NPDR | Widespread blood vessel blockage |
-| 4 | Proliferative DR | Abnormal new vessel growth; highest risk of blindness |
+1. **Stage 1:** frozen backbone, Adam with learning rate 1e-3.
+2. **Stage 2:** unfreeze the final non-BatchNorm layers and fine-tune at learning rate 1e-5.
+3. The checkpoint with the lower validation loss is kept as the final model. Stage 1 won (best validation accuracy 0.767 vs 0.758 for Stage 2).
 
-This is framed as a **multi-class image classification problem**, with additional attention to the ordinal nature of the severity scale during evaluation.
+A second variant (V2: Batch Normalization, a 256-unit ReLU layer, L2 regularization and dropout) was also trained and compared. The original model remained the final choice.
 
----
+## Results (test set, n = 550)
 
-## Dataset
+| Metric | Value |
+|--------|:-----:|
+| Accuracy | 0.764 |
+| Macro F1 | 0.582 |
+| Weighted F1 | 0.761 |
+| Quadratic Weighted Kappa | 0.837 |
+| Macro ROC-AUC | 0.914 |
+| Weighted ROC-AUC | 0.945 |
 
-- **Source:** [APTOS 2019 Blindness Detection](https://www.kaggle.com/competitions/aptos2019-blindness-detection/data) — Kaggle, hosted by the Asia Pacific Tele-Ophthalmology Society (APTOS)
-- **Size:** ~3,660 labeled retinal fundus images (training set)
-- **Format:** RGB `.png` images of varying resolution, accompanied by a CSV of per-image severity labels (0–4)
-- **License / Access:** Publicly available under Kaggle competition terms; see the dataset page for full licensing details
+Per-class ROC-AUC: No DR **0.990** · Mild **0.886** · Moderate **0.912** · Severe **0.886** · Proliferative DR **0.897**
 
-> Dataset files are **not included** in this repository due to size and licensing. See [Getting Started](#getting-started) for download instructions.
+**Efficiency:** 23.6 M parameters · 90.75 MB model file · about 15 minutes training · about 49 ms per image at inference.
 
----
+## Analysis Included
 
-## Models
+- Classification report and confusion matrix
+- One-vs-rest ROC curves for all five classes
+- Most confident wrong predictions and a ranked list of the most common error types
+- **Grad-CAM** heatmaps for a correct prediction and for the most confident misclassification
 
-Four architecturally distinct deep learning models are implemented and evaluated under identical experimental conditions:
+## How to Run
 
-| # | Model | Type | Key Idea |
-|---|-------|------|----------|
-| 1 | **Custom CNN** | Trained from scratch | Baseline convolutional network with no pretrained weights; establishes how much transfer learning improves over a naive approach |
-| 2 | **DenseNet121** | Transfer learning (ImageNet) | Dense connectivity between layers improves feature reuse and gradient flow |
-| 3 | **EfficientNetB0** | Transfer learning (ImageNet) | Compound scaling of depth/width/resolution for strong accuracy-to-parameter efficiency |
-| 4 | **ResNet50** | Transfer learning (ImageNet) | Residual connections enable stable training of deeper networks |
+1. Download APTOS 2019 from [Kaggle](https://www.kaggle.com/competitions/aptos2019-blindness-detection/data) and place `train.csv` and `train_images/` in the project folder the notebook expects.
+2. Install dependencies: `pip install tensorflow scikit-learn pandas numpy matplotlib opencv-python`
+3. Run the notebook top to bottom. Results are saved to a `results/resnet50/` folder.
 
-Each model is documented in its own notebook with architecture justification, hyperparameter configuration, and training curves.
+## Reference
 
----
-
-## Methodology
-
-1. **Exploratory Data Analysis** - class distribution, image dimensions, sample visualization per class
-2. **Preprocessing** - black-border cropping, resizing, contrast enhancement (CLAHE / Gaussian blend), normalization
-3. **Data Splitting** - stratified train / validation / test split; test set held out and used **only** for final evaluation
-4. **Class Imbalance Handling** - class weighting to address the natural skew toward "No DR" cases
-5. **Model Training** - all four models trained under matched conditions (same splits, batch size philosophy, and augmentation strategy) for fair comparison
-6. **Explainability** - Grad-CAM visualizations to interpret which retinal regions drive each model's predictions
-7. **Comparative Evaluation** - performance, efficiency, and generalization compared across all four models
-
----
-
-## Evaluation Metrics
-
-- **Quadratic Weighted Kappa** — primary metric, accounts for the ordinal severity scale
-- **Accuracy, Precision, Recall, F1-score** (per-class and macro-averaged)
-- **ROC-AUC** (one-vs-rest)
-- **Confusion Matrix**
-- **Training time & parameter count** — for computational efficiency comparison
-
----
-
-## Results
-
-| Model | Val. Kappa | Test Kappa | Accuracy | Params | Training Time |
-|-------|:----------:|:----------:|:--------:|:------:|:--------------:|
-| Custom CNN | — | — | — | — | — |
-| DenseNet121 | — | — | — | — | — |
-| EfficientNetB0 | — | — | — | — | — |
-| ResNet50 | 0.8237 | 0.8368 | 76.36% | 23.60M | 15.16 min |
-
-*Full results, confusion matrices, and Grad-CAM visualizations are available in `reports/figures/` and discussed in detail in `reports/Report.pdf`.*
-
----
-
-## Getting Started
-
-### Prerequisites
-- Python 3.10+
-- pip or conda
-
-### Installation
-
-```bash
-git clone https://github.com/<your-org>/diabetic-retinopathy-screening.git
-cd diabetic-retinopathy-screening
-pip install -r requirements.txt
-```
-
-or with conda:
-
-```bash
-conda env create -f environment.yml
-conda activate dr-screening
-```
-
-### Dataset Setup
-
-1. Download the dataset from [Kaggle](https://www.kaggle.com/competitions/aptos2019-blindness-detection/data) (requires a Kaggle account and competition acceptance)
-2. Place the extracted files under `data/raw/`
-3. Run the preprocessing notebook:
-
-```bash
-jupyter notebook notebooks/02_preprocessing.ipynb
-```
-
-### Training a Model
-
-```bash
-python src/train.py --model densenet121 --config configs/config.yaml
-```
-
-### Evaluating a Model
-
-```bash
-python src/evaluate.py --model densenet121 --weights saved_models/densenet121_best.h5
-```
-
----
-
-## Reproducibility
-
-- Random seed fixed at `42` across NumPy, TensorFlow, and data splitting
-- Exact hyperparameters and training configuration for each model are stored in `configs/config.yaml`
-- Model checkpoints saved on best validation kappa score (see `saved_models/`)
-- Dependency versions pinned in `requirements.txt` / `environment.yml`
-
----
-
-## Team & Contributions
-
-| Name | Student ID | Role / Focus Area |
-|------|-----------|--------------------|
-| Bagya R M S *(Leader)* | IT23394124 | Custom CNN + Preprocessing pipeline |
-| Insath MMM | IT23183872 | DenseNet121 |
-| Gayathree M.G.K | IT23334106 | EfficientNetB0 |
-| Purijjala R W M A H | IT23431676 | ResNet50 + Evaluation/Grad-CAM |
-
-See `Members.txt` for full contact details and [commit history](../../commits/main) for individual contributions.
-
----
-
-## References
-
-1. APTOS 2019 Blindness Detection Dataset. Kaggle / Asia Pacific Tele-Ophthalmology Society. https://www.kaggle.com/competitions/aptos2019-blindness-detection
-2. Huang, G., Liu, Z., van der Maaten, L., & Weinberger, K. Q. (2017). *Densely Connected Convolutional Networks*. https://arxiv.org/abs/1608.06993
-3. Tan, M., & Le, Q. V. (2019). *EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks*. https://arxiv.org/abs/1905.11946
-4. He, K., Zhang, X., Ren, S., & Sun, J. (2015). *Deep Residual Learning for Image Recognition*. https://arxiv.org/abs/1512.03385
-5. Selvaraju, R. R., et al. (2017). *Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization*. https://arxiv.org/abs/1610.02391
-
----
-
-## License
-
-This project is submitted as academic coursework for SE4050 – Deep Learning at SLIIT. Code is released under the [MIT License](LICENSE) unless otherwise noted. The dataset is subject to its original Kaggle/APTOS licensing terms and is not redistributed in this repository.
-
----
-
-<p align="center">
-  Built for SE4050 — Deep Learning, SLIIT (2026)
-</p>
+He, K., Zhang, X., Ren, S., & Sun, J. (2015). *Deep Residual Learning for Image Recognition.* https://arxiv.org/abs/1512.03385
